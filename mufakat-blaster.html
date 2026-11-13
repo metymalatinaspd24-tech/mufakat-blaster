@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mufakat Blaster - Kelas 6 SD</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Fredoka', sans-serif;
+  }
+  
+  body {
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  
+  #game-container {
+    position: relative;
+    width: 900px;
+    max-width: 95vw;
+  }
+  
+  canvas {
+    background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    display: block;
+    width: 100%;
+  }
+  
+  .screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16px;
+    color: white;
+    z-index: 10;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .hidden { display: none !important; }
+  
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 0 #ff6b6b;
+    color: #ffe66d;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #4ecdc4;
+  }
+  
+  input, select {
+    padding: 12px 18px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 12px;
+    margin: 8px;
+    width: 280px;
+    text-align: center;
+  }
+  
+  button {
+    background: linear-gradient(to right, #ff6b6b, #ffa502);
+    color: white;
+    border: none;
+    padding: 14px 40px;
+    font-size: 1.3rem;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-top: 20px;
+    font-weight: 700;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 6px 0 #c44569;
+  }
+  
+  button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 9px 0 #c44569;
+  }
+  
+  button:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 #c44569;
+  }
+  
+  .btn-secondary {
+    background: linear-gradient(to right, #4ecdc4, #45b7aa);
+    box-shadow: 0 6px 0 #2a9d8f;
+  }
+  
+  .leaderboard {
+    background: rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .leaderboard table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .leaderboard th, .leaderboard td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+  
+  .leaderboard th {
+    color: #ffe66d;
+  }
+  
+  .info-box {
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  
+  #hud {
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    color: #1a2a6c;
+    font-weight: 700;
+    font-size: 1.3rem;
+    z-index: 5;
+    pointer-events: none;
+    text-shadow: 1px 1px 0 white;
+  }
+  
+  .heart {
+    color: #ff6b6b;
+  }
+</style>
+</head>
+<body>
+<div id="game-container">
+  <canvas id="gameCanvas" width="900" height="600"></canvas>
+  
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div>Skor: <span id="scoreDisplay">0</span></div>
+    <div>Nyawa: <span id="livesDisplay" class="heart">❤❤❤</span></div>
+    <div id="playerInfo"></div>
+  </div>
+  
+  <!-- Start Screen -->
+  <div id="startScreen" class="screen">
+    <h1>🚀 MUFAKAT BLASTER</h1>
+    <h2>Belajar Musyawarah dengan Cara Seru!</h2>
+    
+    <div class="info-box">
+      <strong>Cara Bermain:</strong><br>
+      • Geser ← → atau A D untuk bergerak<br>
+      • Spasi / Klik untuk menembak<br>
+      • Tembak sikap BURUK (merah) → +skor<br>
+      • Ambil nilai BAIK (hijau) → +skor besar<br>
+      • Jangan sampai sikap buruk menyentuh bawah!
+    </div>
+    
+    <input type="text" id="playerName" placeholder="Masukkan Nama Kamu" maxlength="20">
+    <input type="text" id="playerClass" placeholder="Kelas (contoh: 6A)" maxlength="10">
+    
+    <button onclick="startGame()">MULAI BERMAIN!</button>
+    <button class="btn-secondary" onclick="showLeaderboard()">Papan Peringkat</button>
+    <button class="btn-secondary" onclick="showMateri()">Materi Musyawarah</button>
+  </div>
+  
+  <!-- Leaderboard Screen -->
+  <div id="leaderboardScreen" class="screen hidden">
+    <h1>🏆 PAPAN PERINGKAT</h1>
+    <div class="leaderboard">
+      <table id="leaderboardTable">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama</th>
+            <th>Kelas</th>
+            <th>Skor</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <button onclick="backToStart()">Kembali</button>
+  </div>
+  
+  <!-- Materi Screen -->
+  <div id="materiScreen" class="screen hidden">
+    <h1>📚 MATERI MUSYAWARAH</h1>
+    <div class="info-box" style="text-align:left; max-height:350px; overflow-y:auto;">
+      <p><strong>Apa itu Musyawarah?</strong><br>
+      Musyawarah adalah pembahasan bersama untuk mencapai kesepakatan (mufakat) yang menguntungkan semua pihak.</p>
+      
+      <p><strong>Sikap yang HARUS dilakukan dalam musyawarah:</strong></p>
+      <ul>
+        <li>Menghargai pendapat orang lain</li>
+        <li>Tidak memaksakan kehendak sendiri</li>
+        <li>Mengutamakan kepentingan bersama</li>
+        <li>Berbicara dengan sopan dan jelas</li>
+        <li>Mau menerima keputusan bersama</li>
+        <li>Aktif memberikan usulan yang baik</li>
+      </ul>
+      
+      <p><strong>Sikap yang HARUS DIHINDARI:</strong></p>
+      <ul>
+        <li>Memaksakan pendapat sendiri</li>
+        <li>Tidak mau mendengarkan orang lain</li>
+        <li>Mengutamakan kepentingan pribadi</li>
+        <li>Berbicara kasar atau menyela</li>
+        <li>Membuat keputusan sendiri tanpa musyawarah</li>
+      </ul>
+      
+      <p><strong>Contoh di sekolah:</strong><br>
+      Memilih ketua kelas, menentukan jadwal piket, merencanakan kegiatan OSIS, menyelesaikan masalah antar teman.</p>
+    </div>
+    <button onclick="backToStart()">Kembali</button>
+  </div>
+  
+  <!-- Game Over Screen -->
+  <div id="gameOverScreen" class="screen hidden">
+    <h1>GAME OVER</h1>
+    <h2 id="finalScoreText">Skor Kamu: 0</h2>
+    <div class="info-box" id="feedbackText"></div>
+    <button onclick="restartGame()">Main Lagi</button>
+    <button class="btn-secondary" onclick="showLeaderboard()">Lihat Peringkat</button>
+    <button class="btn-secondary" onclick="backToStart()">Menu Utama</button>
+  </div>
+  
+  <!-- Pause Screen -->
+  <div id="pauseScreen" class="screen hidden">
+    <h1>⏸ PAUSE</h1>
+    <div class="info-box">
+      Tekan <strong>P</strong> atau tombol di bawah untuk lanjut bermain
+    </div>
+    <button onclick="resumeGame()">Lanjutkan</button>
+    <button class="btn-secondary" onclick="backToStart()">Keluar ke Menu</button>
+  </div>
+</div>
+
+<script>
+// ==================== DATA & VARIABEL ====================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let playerName = "";
+let playerClass = "";
+let score = 0;
+let lives = 3;
+let gameRunning = false;
+let gamePaused = false;
+let keys = {};
+let bullets = [];
+let enemies = [];
+let goods = [];
+let particles = [];
+let frame = 0;
+let spawnTimer = 0;
+let difficulty = 1;
+
+const player = {
+  x: 450,
+  y: 520,
+  width: 50,
+  height: 40,
+  speed: 7
+};
+
+// Daftar sikap buruk (musuh)
+const badAttitudes = [
+  "Memaksakan\nKehendak",
+  "Tidak Mau\nDengarkan",
+  "Kepentingan\nPribadi",
+  "Bicara Kasar",
+  "Menyela\nPembicaraan",
+  "Egois",
+  "Tidak Sopan",
+  "Putuskan\nSendiri"
+];
+
+// Daftar nilai baik
+const goodValues = [
+  "Menghargai\nPendapat",
+  "Mencari\nMufakat",
+  "Kepentingan\nBersama",
+  "Sopan &\nSantun",
+  "Aktif\nBerkontribusi",
+  "Menerima\nKeputusan"
+];
+
+// ==================== FUNGSI UTAMA ====================
+function startGame() {
+  const nameInput = document.getElementById('playerName').value.trim();
+  const classInput = document.getElementById('playerClass').value.trim();
+  
+  if (!nameInput || !classInput) {
+    alert("Isi Nama dan Kelas dulu ya!");
+    return;
+  }
+  
+  playerName = nameInput;
+  playerClass = classInput;
+  
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('playerInfo').textContent = `${playerName} (${playerClass})`;
+  
+  resetGame();
+  gameRunning = true;
+  gameLoop();
+}
+
+function resetGame() {
+  score = 0;
+  lives = 3;
+  bullets = [];
+  enemies = [];
+  goods = [];
+  particles = [];
+  frame = 0;
+  spawnTimer = 0;
+  difficulty = 1;
+  player.x = 450;
+  updateHUD();
+}
+
+function updateHUD() {
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('livesDisplay').textContent = "❤".repeat(lives) + "♡".repeat(3 - lives);
+}
+
+// ==================== INPUT ====================
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  
+  if (e.code === 'Space' && gameRunning && !gamePaused) {
+    shoot();
+    e.preventDefault();
+  }
+  
+  if (e.code === 'KeyP' && gameRunning) {
+    togglePause();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  keys[e.code] = false;
+});
+
+canvas.addEventListener('click', () => {
+  if (gameRunning && !gamePaused) shoot();
+});
+
+function shoot() {
+  bullets.push({
+    x: player.x + player.width / 2 - 4,
+    y: player.y,
+    width: 8,
+    height: 18,
+    speed: 12
+  });
+}
+
+// ==================== SPAWN ====================
+function spawnEnemy() {
+  const text = badAttitudes[Math.floor(Math.random() * badAttitudes.length)];
+  enemies.push({
+    x: Math.random() * (canvas.width - 80) + 20,
+    y: -60,
+    width: 80,
+    height: 50,
+    speed: 1.5 + difficulty * 0.4 + Math.random(),
+    text: text,
+    color: `hsl(${Math.random() * 20}, 80%, 55%)`
+  });
+}
+
+function spawnGood() {
+  const text = goodValues[Math.floor(Math.random() * goodValues.length)];
+  goods.push({
+    x: Math.random() * (canvas.width - 80) + 20,
+    y: -60,
+    width: 80,
+    height: 50,
+    speed: 1.2 + difficulty * 0.3,
+    text: text
+  });
+}
+
+// ==================== PARTIKEL ====================
+function createParticles(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 30 + Math.random() * 20,
+      color: color,
+      size: 3 + Math.random() * 4
+    });
+  }
+}
+
+// ==================== UPDATE ====================
+function update() {
+  if (!gameRunning || gamePaused) return;
+  
+  frame++;
+  spawnTimer++;
+  
+  // Gerakan player
+  if (keys['ArrowLeft'] || keys['KeyA']) player.x -= player.speed;
+  if (keys['ArrowRight'] || keys['KeyD']) player.x += player.speed;
+  player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+  
+  // Spawn
+  if (spawnTimer > Math.max(40, 90 - difficulty * 5)) {
+    if (Math.random() < 0.7) spawnEnemy();
+    else spawnGood();
+    spawnTimer = 0;
+  }
+  
+  // Update bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    bullets[i].y -= bullets[i].speed;
+    if (bullets[i].y < -20) bullets.splice(i, 1);
+  }
+  
+  // Update enemies
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    enemies[i].y += enemies[i].speed;
+    
+    // Tabrak bawah
+    if (enemies[i].y > canvas.height) {
+      enemies.splice(i, 1);
+      lives--;
+      updateHUD();
+      if (lives <= 0) endGame();
+      continue;
+    }
+    
+    // Tabrak peluru
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      if (rectCollide(bullets[j], enemies[i])) {
+        createParticles(enemies[i].x + 40, enemies[i].y + 25, '#ff6b6b');
+        score += 10;
+        updateHUD();
+        enemies.splice(i, 1);
+        bullets.splice(j, 1);
+        break;
+      }
+    }
+  }
+  
+  // Update goods
+  for (let i = goods.length - 1; i >= 0; i--) {
+    goods[i].y += goods[i].speed;
+    
+    if (goods[i].y > canvas.height) {
+      goods.splice(i, 1);
+      continue;
+    }
+    
+    // Ambil oleh player
+    if (rectCollide(player, goods[i])) {
+      createParticles(goods[i].x + 40, goods[i].y + 25, '#4ecdc4', 18);
+      score += 25;
+      updateHUD();
+      goods.splice(i, 1);
+      continue;
+    }
+    
+    // Jangan ditembak (jika ditembak, skor berkurang)
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      if (rectCollide(bullets[j], goods[i])) {
+        createParticles(goods[i].x + 40, goods[i].y + 25, '#ff9f43');
+        score = Math.max(0, score - 15);
+        updateHUD();
+        goods.splice(i, 1);
+        bullets.splice(j, 1);
+        break;
+      }
+    }
+  }
+  
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].x += particles[i].vx;
+    particles[i].y += particles[i].vy;
+    particles[i].life--;
+    if (particles[i].life <= 0) particles.splice(i, 1);
+  }
+  
+  // Naikkan kesulitan
+  if (frame % 600 === 0) difficulty += 0.5;
+}
+
+function rectCollide(a, b) {
+  return a.x < b.x + b.width &&
+         a.x + a.width > b.x &&
+         a.y < b.y + b.height &&
+         a.y + a.height > b.y;
+}
+
+// ==================== DRAW ====================
+function draw() {
+  // Background langit
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#87CEEB');
+  grad.addColorStop(1, '#E0F7FA');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Awan sederhana
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  drawCloud(100, 80, 60);
+  drawCloud(400, 50, 80);
+  drawCloud(700, 100, 50);
+  
+  // Player (kapal / karakter)
+  drawPlayer();
+  
+  // Bullets
+  ctx.fillStyle = '#ffeb3b';
+  bullets.forEach(b => {
+    ctx.beginPath();
+    ctx.roundRect(b.x, b.y, b.width, b.height, 4);
+    ctx.fill();
+  });
+  
+  // Enemies
+  enemies.forEach(e => {
+    ctx.fillStyle = e.color;
+    ctx.beginPath();
+    ctx.roundRect(e.x, e.y, e.width, e.height, 10);
+    ctx.fill();
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Fredoka';
+    ctx.textAlign = 'center';
+    const lines = e.text.split('\n');
+    lines.forEach((line, i) => {
+      ctx.fillText(line, e.x + e.width/2, e.y + 20 + i * 16);
+    });
+  });
+  
+  // Goods
+  goods.forEach(g => {
+    ctx.fillStyle = '#2ecc71';
+    ctx.beginPath();
+    ctx.roundRect(g.x, g.y, g.width, g.height, 10);
+    ctx.fill();
+    
+    // Kilauan
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(g.x + 5, g.y + 5, g.width - 10, 15, 6);
+    ctx.fill();
+    
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px Fredoka';
+    ctx.textAlign = 'center';
+    const lines = g.text.split('\n');
+    lines.forEach((line, i) => {
+      ctx.fillText(line, g.x + g.width/2, g.y + 20 + i * 16);
+    });
+  });
+  
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life / 50;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawCloud(x, y, size) {
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+  ctx.arc(x + size * 0.4, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+  ctx.arc(x + size * 0.7, y, size * 0.45, 0, Math.PI * 2);
+  ctx.arc(x + size * 0.3, y + size * 0.15, size * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPlayer() {
+  // Badan kapal
+  ctx.fillStyle = '#3498db';
+  ctx.beginPath();
+  ctx.moveTo(player.x + 25, player.y);
+  ctx.lineTo(player.x + 50, player.y + 40);
+  ctx.lineTo(player.x, player.y + 40);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Kaca
+  ctx.fillStyle = '#a0e7ff';
+  ctx.beginPath();
+  ctx.arc(player.x + 25, player.y + 18, 10, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Sayap
+  ctx.fillStyle = '#2980b9';
+  ctx.fillRect(player.x - 10, player.y + 25, 15, 10);
+  ctx.fillRect(player.x + 45, player.y + 25, 15, 10);
+  
+  // Api mesin
+  if (frame % 6 < 3) {
+    ctx.fillStyle = '#ff9f43';
+    ctx.beginPath();
+    ctx.moveTo(player.x + 15, player.y + 40);
+    ctx.lineTo(player.x + 25, player.y + 55);
+    ctx.lineTo(player.x + 35, player.y + 40);
+    ctx.fill();
+  }
+}
+
+// ==================== GAME LOOP ====================
+function gameLoop() {
+  if (!gameRunning) return;
+  
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// ==================== GAME OVER & LEADERBOARD ====================
+function endGame() {
+  gameRunning = false;
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.remove('hidden');
+  document.getElementById('finalScoreText').textContent = `Skor Kamu: ${score}`;
+  
+  // Feedback edukatif
+  let feedback = "";
+  if (score >= 300) {
+    feedback = "Luar biasa! Kamu sudah memahami betul pentingnya musyawarah dan mufakat. Terus praktikkan di kehidupan sehari-hari ya!";
+  } else if (score >= 150) {
+    feedback = "Bagus! Kamu sudah tahu mana sikap yang baik dan buruk dalam musyawarah. Tingkatkan lagi ya!";
+  } else {
+    feedback = "Jangan menyerah! Ingat: dalam musyawarah kita harus saling menghargai, tidak memaksakan kehendak, dan mengutamakan kepentingan bersama.";
+  }
+  document.getElementById('feedbackText').innerHTML = feedback;
+  
+  saveScore();
+}
+
+function saveScore() {
+  let scores = JSON.parse(localStorage.getItem('mufakatScores') || '[]');
+  scores.push({
+    name: playerName,
+    class: playerClass,
+    score: score,
+    date: new Date().toLocaleDateString('id-ID')
+  });
+  
+  scores.sort((a, b) => b.score - a.score);
+  scores = scores.slice(0, 10); // Top 10
+  localStorage.setItem('mufakatScores', JSON.stringify(scores));
+}
+
+function showLeaderboard() {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('leaderboardScreen').classList.remove('hidden');
+  
+  const scores = JSON.parse(localStorage.getItem('mufakatScores') || '[]');
+  const tbody = document.querySelector('#leaderboardTable tbody');
+  tbody.innerHTML = '';
+  
+  if (scores.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">Belum ada data</td></tr>';
+    return;
+  }
+  
+  scores.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${s.name}</td>
+      <td>${s.class}</td>
+      <td><strong>${s.score}</strong></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function showMateri() {
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('materiScreen').classList.remove('hidden');
+}
+
+function backToStart() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById('startScreen').classList.remove('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  gameRunning = false;
+}
+
+function restartGame() {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  resetGame();
+  gameRunning = true;
+  gameLoop();
+}
+
+function togglePause() {
+  gamePaused = !gamePaused;
+  document.getElementById('pauseScreen').classList.toggle('hidden', !gamePaused);
+}
+
+function resumeGame() {
+  gamePaused = false;
+  document.getElementById('pauseScreen').classList.add('hidden');
+}
+
+// Polyfill roundRect jika browser lama
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
+}
+</script>
+</body>
+</html>
